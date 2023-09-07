@@ -93,13 +93,13 @@ class threeJs {
                 case "ArrowUp":
                 case "w":
                     this.object.position.z--;
+                    break;                
+                case "ArrowLeft":
+                case "a":
+                    this.object.position.x--;
                     break;
                 case "ArrowRight":
                 case "d":
-                    this.object.position.x--;
-                    break;
-                case "ArrowLeft":
-                case "a":
                     this.object.position.x++;
                     break;
                 default:
