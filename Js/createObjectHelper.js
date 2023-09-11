@@ -15,11 +15,11 @@ export class Create3dObjectsHelper {
     textures() {
         this.textureLoader = new THREE.TextureLoader();
         return {
-            nest: this.textureLoader.load("public\\textures\\nest.jpg"),
-            stone: this.textureLoader.load("public\\textures\\stones.jpg"),
-            whiteWaves: this.textureLoader.load("public\\textures\\white-waves.jpg"),
-            waterDrops: this.textureLoader.load("public\\textures\\glass_water_drops.jpg"),
-            wood: this.textureLoader.load("public\\textures\\wood.jpg")
+            nest: this.textureLoader.load("textures\\nest.jpg"),
+            stone: this.textureLoader.load("textures\\stones.jpg"),
+            whiteWaves: this.textureLoader.load("textures\\white-waves.jpg"),
+            waterDrops: this.textureLoader.load("textures\\glass_water_drops.jpg"),
+            wood: this.textureLoader.load("textures\\wood.jpg")
         }
     }
 
