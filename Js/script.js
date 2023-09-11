@@ -42,9 +42,9 @@ class threeJs {
 
     setSkyBox() {
         let images = [
-            "textures\\Day_Light_skyBox\\Box_Left_1.bmp", "textures\\Day_Light_skyBox\\Box_Right_2.bmp",
-            "textures\\Day_Light_skyBox\\Box_Top_3.bmp", "textures\\Day_Light_skyBox\\Box_Bottom_4.bmp",
-            "textures\\Day_Light_skyBox\\Box_Back_5.bmp", "textures\\Day_Light_skyBox\\Box_Front_6.bmp"
+            "public\\textures\\Day_Light_skyBox\\Box_Left_1.bmp", "public\\textures\\Day_Light_skyBox\\Box_Right_2.bmp",
+            "public\\textures\\Day_Light_skyBox\\Box_Top_3.bmp", "public\\textures\\Day_Light_skyBox\\Box_Bottom_4.bmp",
+            "public\\textures\\Day_Light_skyBox\\Box_Back_5.bmp", "public\\textures\\Day_Light_skyBox\\Box_Front_6.bmp"
         ]
         let loader = new THREE.CubeTextureLoader();
         this.scene.background = loader.load(images);
