@@ -22,9 +22,10 @@ class threeJs {
         this.preLoadTextures();
         this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
         const sphere = this.create3dObjectsHelper.createBasicSphereObject(1, 32, 32, this.sphereReflectMaterial);
+        const cube = this.create3dObjectsHelper.createBasicCubeObject(1, 1, 1, this.sphereReflectMaterial);
         this.gridHelper = new THREE.GridHelper(30, 60)        
         this.scene.add(this.gridHelper);       
-        this.changeObjectFromScene(sphere);
+        this.changeObjectFromScene(cube);
         this.moveObject([this.object]);
         this.renderer.shadowMap.enabled = true;
     }
