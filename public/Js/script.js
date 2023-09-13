@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
+import {GLTFLoader} from 'three/examples/jsm//loaders/GLTFLoader'
 import {Create3dObjectsHelper} from './createObjectHelper'
 class threeJs {
     constructor() {
@@ -18,16 +19,71 @@ class threeJs {
     async initTheeJs() {        
         this.setSceneAndCam();
         this.setRenderer("#8bc34a");
+        this.setSpotLight();
         this.setSkyBox();
         this.preLoadTextures();
+        
         this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
-        const sphere = this.create3dObjectsHelper.createBasicSphereObject(1, 32, 32, this.sphereReflectMaterial);
-        const cube = this.create3dObjectsHelper.createBasicCubeObject(1, 1, 1, this.sphereReflectMaterial);
+        const sphere = this.create3dObjectsHelper.createBasicSphereObject(1, 32, 32, this.reflectMaterial);
+        const cube = this.create3dObjectsHelper.createBasicCubeObject(1, 1, 1, this.reflectMaterial);
         this.gridHelper = new THREE.GridHelper(30, 60)        
         this.scene.add(this.gridHelper);       
         this.changeObjectFromScene(cube);
         this.moveObject([this.object]);
         this.renderer.shadowMap.enabled = true;
+
+
+        this.hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 4);
+        this.scene.add(this.hemiLight);
+        this.renderer.toneMapping = THREE.ReinhardToneMapping;
+        this.renderer.toneMappingExposure = 2.3;
+        this.renderer.shadowMap.enabled = true;
+        
+        // loading 3d model
+        new GLTFLoader().load('models/rusticFarmHouseNewBrunswickCanada/scene.gltf', result => {            
+            this.model = result.scene.children[0];
+            this.model.position.set(-30, -50, 0);
+            this.model.traverse(n =>  {
+                if(n.isMesh) {
+                    n.castShadow = true;
+                    n.receiveShadow = true;
+                    if(n.material.map) {
+                        n.material.map.anisotropy = 16;
+                    }
+                }
+            });
+            this.scene.add(this.model);
+        });
+
+        new GLTFLoader().load('models/oldRailroadBumper/scene.gltf', result => {
+            this.scene.remove(this.model);
+            this.model = result.scene.children[0];
+            this.model.position.set(0, 0.25, 0);
+            this.model.traverse(n =>  {
+                if(n.isMesh) {
+                    n.castShadow = true;
+                    n.receiveShadow = true;
+                    if(n.material.map) {
+                        n.material.map.anisotropy = 16;
+                    }
+                }
+            });
+            this.changeObjectFromScene(this.model);
+            // this.scene.add(this.model);
+        });
+
+    }
+
+    /**
+     * Set light and cast shadow
+     */
+    setSpotLight() {
+        this.spotLight = new THREE.SpotLight(0xffa95c,4);
+        this.spotLight.castShadow = true;
+        this.spotLight.shadow.bias = -0.0001;
+        this.spotLight.shadow.mapSize.width = 1024*4;
+        this.spotLight.shadow.mapSize.height = 1024*4;
+        this.scene.add(this.spotLight);
     }
 
     /**
@@ -131,6 +187,11 @@ class threeJs {
     runScene() {
         const renderSceneAndCam = () => {
             this.renderer.render(this.scene, this.camera);
+            this.spotLight.position.set(
+                this.camera.position.x + 10,
+                this.camera.position.y + 10,
+                this.camera.position.z + 10
+            );
             requestAnimationFrame(renderSceneAndCam);
         }
         renderSceneAndCam();
@@ -158,7 +219,7 @@ class threeJs {
         this.scene.remove(this.object);
         this.setObject(geometryObject);
         this.scene.add(this.object);
-        this.animateObject();
+        // this.animateObject();
     }
 
     /**
@@ -211,7 +272,7 @@ class threeJs {
         this.texturesValues = this.create3dObjectsHelper.textures();
         this.metallicNestMaterial = this.create3dObjectsHelper.standardMaterialValues({normalMap: this.texturesValues.nest, roughness: 0.8, metalness: 0.3});
         this.woodMaterial = this.create3dObjectsHelper.standardMaterialValues({normalMap: this.texturesValues.wood, roughness: 0.9, metalness: 0.1});
-        this.sphereReflectMaterial = this.create3dObjectsHelper.basicMaterialValues({envMap: this.scene.background});
+        this.reflectMaterial = this.create3dObjectsHelper.basicMaterialValues({envMap: this.scene.background});
     }
 
     setDirectionalLightHelper() {
