@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
-import {GLTFLoader} from 'three/examples/jsm//loaders/GLTFLoader'
 import {Create3dObjectsHelper} from './createObjectHelper'
 class threeJs {
     constructor() {
@@ -40,39 +39,10 @@ class threeJs {
         this.renderer.shadowMap.enabled = true;
         
         // loading 3d model
-        new GLTFLoader().load('models/rusticFarmHouseNewBrunswickCanada/scene.gltf', result => {            
-            this.model = result.scene.children[0];
-            this.model.position.set(-30, -50, 0);
-            this.model.traverse(n =>  {
-                if(n.isMesh) {
-                    n.castShadow = true;
-                    n.receiveShadow = true;
-                    if(n.material.map) {
-                        n.material.map.anisotropy = 16;
-                    }
-                }
-            });
-            this.scene.add(this.model);
-        });
-
-        new GLTFLoader().load('models/oldRailroadBumper/scene.gltf', result => {
-            this.scene.remove(this.model);
-            this.model = result.scene.children[0];
-            this.model.position.set(0, 0.25, 0);
-            this.model.traverse(n =>  {
-                if(n.isMesh) {
-                    n.castShadow = true;
-                    n.receiveShadow = true;
-                    if(n.material.map) {
-                        n.material.map.anisotropy = 16;
-                    }
-                }
-            });
-            this.changeObjectFromScene(this.model);
-            // this.scene.add(this.model);
-        });
-
-    }
+        this.create3dObjectsHelper.load3dModel('models/rusticFarmHouseNewBrunswickCanada/scene.gltf', -30, -50, 0, this.scene);
+        this.create3dObjectsHelper.load3dModel('models/oldRailroadBumper/scene.gltf', -20, 0, 10, this.scene);
+        // this.create3dObjectsHelper.load3dModel('models/oldRailroadBumper/scene.gltf', 0, 0.25, 0);
+    }    
 
     /**
      * Set light and cast shadow

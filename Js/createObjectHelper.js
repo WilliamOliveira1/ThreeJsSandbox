@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {GLTFLoader} from 'three/examples/jsm//loaders/GLTFLoader'
 export class Create3dObjectsHelper {
     constructor() {
         this.THREE = THREE;
@@ -122,7 +123,7 @@ export class Create3dObjectsHelper {
      * @param {Object} rotationValueY - Value to rotate the plane in Y. Default value is null.
      * @param {Object} rotationValueZ - Value to rotate the plane in Z. Default value is null.
      * @param {Object} materialObject - material of the 3d object, default value is basicMaterialValues object
-     * @returns {Object} Threejs Mesh object 
+     * @returns {Object} Threejs Mesh object
      */
     createBasicPlaneObject(width = 30, height = 30, rotationValueX = 0, rotationValueY = 0, rotationValueZ = 0, materialObject = this.basicMaterialValues()) {
         const  planeGeometry = new THREE.PlaneGeometry(width, height)
@@ -181,5 +182,31 @@ export class Create3dObjectsHelper {
         }
 
         return true;
+    }
+
+    /**
+     * Add 3d model in screen
+     * @param {Object} modelPath - path of 3d model file
+     * @param {Number} positionX - position in X to place the object
+     * @param {Number} positionY - position in Y to place the object
+     * @param {Number} positionZ - position in Z to place the object
+     * @param {Number} positionZ - threejs scene object
+     */
+    load3dModel(modelPath, positionX, positionY, positionZ, scene) {
+        let model;
+        new GLTFLoader().load(modelPath, result => {            
+            model = result.scene.children[0];
+            model.position.set(positionX, positionY, positionZ);
+            model.traverse(n =>  {
+                if(n.isMesh) {
+                    n.castShadow = true;
+                    n.receiveShadow = true;
+                    if(n.material.map) {
+                        n.material.map.anisotropy = 16;
+                    }
+                }
+            });
+            scene.add(model);
+        });        
     }
 }
