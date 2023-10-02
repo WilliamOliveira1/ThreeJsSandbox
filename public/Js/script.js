@@ -77,7 +77,7 @@ class threeJs {
         
             if(!objectExist) {
                 if(this.intersects.length > 0) {
-                    const sphereClone = this.extenal3dObject.clone() ? this.extenal3dObject.clone() : this.cube.clone();
+                    const sphereClone = this.extenal3dObject ? this.extenal3dObject.clone() : this.cube.clone();
                     let position = this.highlightMesh.position;
                     position.y = 0.5;
                     sphereClone.position.copy(position);
