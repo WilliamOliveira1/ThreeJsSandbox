@@ -21,7 +21,12 @@ class threeJs {
         this.setSceneAndCam();
         this.setRenderer("#8bc34a");
         this.setSpotLight();
-        this.setSkyBox();
+        let skyBoxImages = [
+            "textures\\Day_Light_skyBox\\Box_Left_1.bmp", "textures\\Day_Light_skyBox\\Box_Right_2.bmp",
+            "textures\\Day_Light_skyBox\\Box_Top_3.bmp", "textures\\Day_Light_skyBox\\Box_Bottom_4.bmp",
+            "textures\\Day_Light_skyBox\\Box_Back_5.bmp", "textures\\Day_Light_skyBox\\Box_Front_6.bmp"
+        ]
+        this.setSkyBox(skyBoxImages);
         this.preLoadTextures();
         
         this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
@@ -179,14 +184,13 @@ class threeJs {
         });
     }
 
-    setSkyBox() {
-        let images = [
-            "textures\\Day_Light_skyBox\\Box_Left_1.bmp", "textures\\Day_Light_skyBox\\Box_Right_2.bmp",
-            "textures\\Day_Light_skyBox\\Box_Top_3.bmp", "textures\\Day_Light_skyBox\\Box_Bottom_4.bmp",
-            "textures\\Day_Light_skyBox\\Box_Back_5.bmp", "textures\\Day_Light_skyBox\\Box_Front_6.bmp"
-        ]
+    /**
+     * Set skybox images
+     * @param {Array} skyBoxImages - array of images path 
+     */
+    setSkyBox(skyBoxImages) {        
         let loader = new THREE.CubeTextureLoader();
-        this.scene.background = loader.load(images);
+        this.scene.background = loader.load(skyBoxImages);
         this.renderer.render(this.scene, this.camera);        
         this.runScene();
     }
