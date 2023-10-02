@@ -185,28 +185,34 @@ export class Create3dObjectsHelper {
     }
 
     /**
-     * Add 3d model in screen
+     * Load and add 3d model in screen
      * @param {Object} modelPath - path of 3d model file
-     * @param {Number} positionX - position in X to place the object
-     * @param {Number} positionY - position in Y to place the object
-     * @param {Number} positionZ - position in Z to place the object
-     * @param {Number} positionZ - threejs scene object
+     * @returns promise with 3d model object
      */
-    load3dModel(modelPath, positionX, positionY, positionZ, scene) {
+    async load3dModel(modelPath) {
         let model;
-        new GLTFLoader().load(modelPath, result => {            
-            model = result.scene.children[0];
-            model.position.set(positionX, positionY, positionZ);
-            model.traverse(n =>  {
-                if(n.isMesh) {
-                    n.castShadow = true;
-                    n.receiveShadow = true;
-                    if(n.material.map) {
-                        n.material.map.anisotropy = 16;
-                    }
+        return new Promise((resolve, reject) => {
+            try {
+                new GLTFLoader().load(modelPath, result => {
+                    model = result.scene.children[0];                    
+                    model.traverse(n => {
+                        if (n.isMesh) {
+                            n.castShadow = true;
+                            n.receiveShadow = true;
+                            if (n.material.map) {
+                                n.material.map.anisotropy = 16;
+                            }
+                        }
+                    });
+                    resolve(model);
+                });
+            } catch {
+                const errorObject = {
+                    msg: 'Could not load the 3d model Object',
+                    error
                 }
-            });
-            scene.add(model);
-        });        
+                reject(errorObject);
+            }
+        });                
     }
 }

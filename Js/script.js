@@ -9,40 +9,158 @@ class threeJs {
         this.camera = null;
         this.renderer = null;
         this.textureLoader = null;
+        this.raycaster = new THREE.Raycaster();
         this.initTheeJs();
     }
 
     /**
      * Init threejs objects
      */
-    async initTheeJs() {        
+    async initTheeJs() {
+        this.objects = [];
         this.setSceneAndCam();
         this.setRenderer("#8bc34a");
         this.setSpotLight();
-        this.setSkyBox();
+        let skyBoxImages = [
+            "textures\\Day_Light_skyBox\\Box_Left_1.bmp", "textures\\Day_Light_skyBox\\Box_Right_2.bmp",
+            "textures\\Day_Light_skyBox\\Box_Top_3.bmp", "textures\\Day_Light_skyBox\\Box_Bottom_4.bmp",
+            "textures\\Day_Light_skyBox\\Box_Back_5.bmp", "textures\\Day_Light_skyBox\\Box_Front_6.bmp"
+        ]
+        this.setSkyBox(skyBoxImages);
         this.preLoadTextures();
         
         this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
-        const sphere = this.create3dObjectsHelper.createBasicSphereObject(1, 32, 32, this.reflectMaterial);
-        const cube = this.create3dObjectsHelper.createBasicCubeObject(1, 1, 1, this.reflectMaterial);
-        this.gridHelper = new THREE.GridHelper(30, 60)        
-        this.scene.add(this.gridHelper);       
-        this.changeObjectFromScene(cube);
-        this.moveObject([this.object]);
-        this.renderer.shadowMap.enabled = true;
-
+        this.sphere = this.create3dObjectsHelper.createBasicSphereObject(0.5, 32, 32, this.reflectMaterial);
+        this.cube = this.create3dObjectsHelper.createBasicCubeObject(1, 1, 1, this.reflectMaterial);             
+        this.setPlaneAndPickSquare();
 
         this.hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 4);
         this.scene.add(this.hemiLight);
         this.renderer.toneMapping = THREE.ReinhardToneMapping;
         this.renderer.toneMappingExposure = 2.3;
         this.renderer.shadowMap.enabled = true;
+        this.resizeScreenAction();
+        this.insertObjectInPlaneScene();
+   
+        // this.extenal3dObject = this.load3dExternalModel('models/rusticFarmHouseNewBrunswickCanada/scene.gltf', -30, -50, 0);
+        // this.extenal3dObject = await this.load3dExternalModel('models/oldRailroadBumper/scene.gltf', -20, 0, 10);
+    }
+
+    /**
+     * Load extenal 3d model
+     * @param {Object} modelPath - path of 3d model file
+     * @param {Number} positionX - position in X to place the object
+     * @param {Number} positionY - position in Y to place the object
+     * @param {Number} positionZ - position in Z to place the object
+     */
+    async load3dExternalModel(modelPath, positionX, positionY, positionZ) {
+        let model;
+        try {            
+            model = await this.create3dObjectsHelper.load3dModel(modelPath, positionX, positionY, positionZ);
+            model.position.set(positionX, positionY, positionZ);      
+        } catch (error) {
+            console.log(error)
+        } finally {
+            return model;
+        }
+    }
+
+    /**
+     * insert 3d model object in a plane position selected
+     */
+    insertObjectInPlaneScene() {
+        window.addEventListener('click', () => {
+            const objectExist = this.objects.find((object) => {
+                return (object.position.x === this.highlightMesh.position.x)
+                && (object.position.z === this.highlightMesh.position.z)
+            });
         
-        // loading 3d model
-        this.create3dObjectsHelper.load3dModel('models/rusticFarmHouseNewBrunswickCanada/scene.gltf', -30, -50, 0, this.scene);
-        this.create3dObjectsHelper.load3dModel('models/oldRailroadBumper/scene.gltf', -20, 0, 10, this.scene);
-        // this.create3dObjectsHelper.load3dModel('models/oldRailroadBumper/scene.gltf', 0, 0.25, 0);
-    }    
+            if(!objectExist) {
+                if(this.intersects.length > 0) {
+                    const sphereClone = this.extenal3dObject.clone() ? this.extenal3dObject.clone() : this.cube.clone();
+                    let position = this.highlightMesh.position;
+                    position.y = 0.5;
+                    sphereClone.position.copy(position);
+                    this.scene.add(sphereClone);
+                    this.objects.push(sphereClone);
+                    this.highlightMesh.material.color.setHex(0xFF0000);
+                }
+            }
+            console.log(this.scene.children.length);
+        });
+    }
+
+    /**
+     * When resize window change the camera and renderer
+     */
+    resizeScreenAction() {
+        window.addEventListener('resize', () => {
+            debugger;
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+
+    /**
+     * Set plane and highlight square while mouse move over plane
+     * TODO: refact
+     */
+    setPlaneAndPickSquare() {
+        const planeMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(20, 20),
+            new THREE.MeshBasicMaterial({
+                side: THREE.DoubleSide,
+                visible: false
+            })
+        );
+        planeMesh.rotateX(-Math.PI / 2);
+        this.scene.add(planeMesh);
+        
+        this.addGridHelper();
+        
+        this.highlightMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(1, 1),
+            new THREE.MeshBasicMaterial({
+                side: THREE.DoubleSide,
+                transparent: true
+            })
+        );
+        this.highlightMesh.rotateX(-Math.PI / 2);
+        this.highlightMesh.position.set(0.5, 0, 0.5);
+        this.scene.add(this.highlightMesh);
+        
+        const mousePosition = new THREE.Vector2();        
+        window.addEventListener('mousemove', (event) => {
+            mousePosition.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mousePosition.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            this.raycaster.setFromCamera(mousePosition, this.camera);
+            this.intersects = this.raycaster.intersectObject(planeMesh);
+            if(this.intersects.length > 0) {
+                const intersect = this.intersects[0];
+                const highlightPos = new THREE.Vector3().copy(intersect.point).floor().addScalar(0.5);
+                this.highlightMesh.position.set(highlightPos.x, 0, highlightPos.z);
+        
+                const objectExist = this.objects.find((object) => {
+                    return (object.position.x === this.highlightMesh.position.x)
+                    && (object.position.z === this.highlightMesh.position.z)
+                });
+        
+                if(!objectExist)
+                    this.highlightMesh.material.color.setHex(0xFFFFFF);
+                else
+                    this.highlightMesh.material.color.setHex(0xFF0000);
+            }
+        });
+    }
+
+    /**
+     * Add grid helper
+     */
+    addGridHelper() {
+        this.gridHelper = new THREE.GridHelper(20, 20)        
+        this.scene.add(this.gridHelper);
+    }
 
     /**
      * Set light and cast shadow
@@ -66,14 +184,13 @@ class threeJs {
         });
     }
 
-    setSkyBox() {
-        let images = [
-            "textures\\Day_Light_skyBox\\Box_Left_1.bmp", "textures\\Day_Light_skyBox\\Box_Right_2.bmp",
-            "textures\\Day_Light_skyBox\\Box_Top_3.bmp", "textures\\Day_Light_skyBox\\Box_Bottom_4.bmp",
-            "textures\\Day_Light_skyBox\\Box_Back_5.bmp", "textures\\Day_Light_skyBox\\Box_Front_6.bmp"
-        ]
+    /**
+     * Set skybox images
+     * @param {Array} skyBoxImages - array of images path 
+     */
+    setSkyBox(skyBoxImages) {        
         let loader = new THREE.CubeTextureLoader();
-        this.scene.background = loader.load(images);
+        this.scene.background = loader.load(skyBoxImages);
         this.renderer.render(this.scene, this.camera);        
         this.runScene();
     }
@@ -93,9 +210,7 @@ class threeJs {
      * Set threejs scene and camera
      */
     setSceneAndCam() {
-        //Create a scene
         this.scene = new THREE.Scene();
-        // create camera
         this.camera = new THREE.PerspectiveCamera(
             70,
             window.innerWidth/window.innerHeight,
@@ -155,7 +270,10 @@ class threeJs {
      * run Scene - must do to render the scene and the camera
      */
     runScene() {
-        const renderSceneAndCam = () => {
+        const renderSceneAndCam = (time) => {
+            if(this.highlightMesh) {
+                this.highlightMesh.material.opacity = 1 + Math.sin(time / 120);
+            }            
             this.renderer.render(this.scene, this.camera);
             this.spotLight.position.set(
                 this.camera.position.x + 10,
