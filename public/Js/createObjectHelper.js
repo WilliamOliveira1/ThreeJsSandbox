@@ -5,7 +5,8 @@ export class Create3dObjectsHelper {
         this.THREE = THREE;
         this.materialType = {
             basicMaterial: THREE.MeshBasicMaterial,
-            standardMaterial: THREE.MeshStandardMaterial
+            standardMaterial: THREE.MeshStandardMaterial,
+            shaderMaterial: THREE.ShaderMaterial
         }        
     }
 
@@ -20,7 +21,8 @@ export class Create3dObjectsHelper {
             stone: this.textureLoader.load("textures\\stones.jpg"),
             whiteWaves: this.textureLoader.load("textures\\white-waves.jpg"),
             waterDrops: this.textureLoader.load("textures\\glass_water_drops.jpg"),
-            wood: this.textureLoader.load("textures\\wood.jpg")
+            wood: this.textureLoader.load("textures\\wood.jpg"),
+            globe: this.textureLoader.load("textures\\globe.jpg") // TODO: find better textures
         }
     }
 
@@ -44,8 +46,19 @@ export class Create3dObjectsHelper {
      * @param {Object} envMap - The environment map. Default is null.
      * @returns {Object} a standard material object value
      */
-    basicMaterialValues({color = "#FFFFFF", isFogAffected = true, envMap = null} = {}) {
-        return {color, isFogAffected, envMap};
+    basicMaterialValues({color = "#FFFFFF", isFogAffected = true, envMap = null, map = null} = {}) {
+        return {color, isFogAffected, envMap, map};
+    }
+
+     /**
+     * Basic material values (Get and Set)
+     * @param {String} color - Hex color Codes - the default value is "#FFFFFF" (white)
+     * @param {Boolean} isFogAffected - Whether the material is affected by fog. Default is true.
+     * @param {Object} envMap - The environment map. Default is null.
+     * @returns {Object} a standard material object value
+     */
+     shaderMaterialValues({vertexShader = null, fragmentShader = null, uniforms = null} = {}) {
+        return {vertexShader, fragmentShader, uniforms};
     }
     
     /**
@@ -67,7 +80,7 @@ export class Create3dObjectsHelper {
      * @param {Object} materialObject - material of the 3d object, default value is basicMaterialValues object
      * @returns {Object} Threejs Mesh object 
      */
-    createBasicSphereObject(radius = 1, widhtSegments = 32, heightSegments = 16, materialObject = this.basicMaterialValues()) {        
+    createBasicSphereObject(radius = 1, widhtSegments = 32, heightSegments = 16, materialObject = this.basicMaterialValues()) {
         const sphereGeometry = new THREE.SphereGeometry(radius, widhtSegments, heightSegments);
         return this.create3dObject(sphereGeometry, materialObject);
     }
@@ -147,10 +160,10 @@ export class Create3dObjectsHelper {
      * @param {Object} materialObjValues — material object value.
      * @returns {Object} MaterialType enum
      */
-    getMaterialObjType(materialObjValues) {    
-        let materialValues = [this.basicMaterialValues(), this.standardMaterialValues()]
+    getMaterialObjType(materialObjValues) {
         let materialType = null;
-        let materialNames = ["basicMaterial", "standardMaterial"]
+        let materialValues = [this.basicMaterialValues(), this.standardMaterialValues(), new THREE.ShaderMaterial]        
+        let materialNames = ["basicMaterial", "standardMaterial", "shaderMaterial"]
         materialValues.forEach((material, index) => {
             let isEqual = this.isSameTypeObjects(material, materialObjValues);
             if(isEqual) {

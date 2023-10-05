@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
-// import legacy from '@vitejs/plugin-legacy';
+import vitePluginString from 'vite-plugin-string'
 
 export default defineConfig({
-    // plugins: [legacy()],
+    plugins: [vitePluginString()],
     base: "/ThreeJsSandbox"
 });
