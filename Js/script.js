@@ -1,6 +1,11 @@
 import * as THREE from 'three';
+import vertexShader from "../shaders/vertex.glsl"
+import atmosphereVertexShader from "../shaders/atmosphereVertex.glsl"
+import fragmentShader from "../shaders/fragment.glsl"
+import atmosphereFragmentShader from "../shaders/atmosphereFragment.glsl"
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
 import {Create3dObjectsHelper} from './createObjectHelper'
+
 class threeJs {
     constructor() {
         this.create3dObjectsHelper = new Create3dObjectsHelper();
@@ -19,18 +24,13 @@ class threeJs {
     async initTheeJs() {
         this.objects = [];
         this.setSceneAndCam();
-        this.setRenderer("#8bc34a");
-        this.setSpotLight();
-        let skyBoxImages = [
-            "textures\\Day_Light_skyBox\\Box_Left_1.bmp", "textures\\Day_Light_skyBox\\Box_Right_2.bmp",
-            "textures\\Day_Light_skyBox\\Box_Top_3.bmp", "textures\\Day_Light_skyBox\\Box_Bottom_4.bmp",
-            "textures\\Day_Light_skyBox\\Box_Back_5.bmp", "textures\\Day_Light_skyBox\\Box_Front_6.bmp"
-        ]
-        this.setSkyBox(skyBoxImages);
+        this.setRenderer();        
+        this.setSkyBox();
         this.preLoadTextures();
-        
         this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
-        this.sphere = this.create3dObjectsHelper.createBasicSphereObject(0.5, 32, 32, this.reflectMaterial);
+        this.sphere = this.create3dObjectsHelper.createBasicSphereObject(0.5,50,50, this.shaderMaterial);
+        this.sphereAtmosphere = this.create3dObjectsHelper.createBasicSphereObject(0.5,50,50, this.atmosphereShaderMaterial);
+        this.sphereAtmosphere.scale.set(1.3,1.3,1.3);
         this.cube = this.create3dObjectsHelper.createBasicCubeObject(1, 1, 1, this.reflectMaterial);             
         this.setPlaneAndPickSquare();
 
@@ -41,9 +41,9 @@ class threeJs {
         this.renderer.shadowMap.enabled = true;
         this.resizeScreenAction();
         this.insertObjectInPlaneScene();
-   
-        // this.extenal3dObject = this.load3dExternalModel('models/rusticFarmHouseNewBrunswickCanada/scene.gltf', -30, -50, 0);
-        // this.extenal3dObject = await this.load3dExternalModel('models/oldRailroadBumper/scene.gltf', -20, 0, 10);
+
+
+        this.sphere.scale.set(1.1,1.1,1.1)
     }
 
     /**
@@ -77,12 +77,15 @@ class threeJs {
         
             if(!objectExist) {
                 if(this.intersects.length > 0) {
-                    const sphereClone = this.extenal3dObject ? this.extenal3dObject.clone() : this.cube.clone();
+                    const sphereClone = this.extenal3dObject ? this.extenal3dObject.clone() : this.sphere.clone();//this.sphereAtmosphere.clone()
+                    const sphereAtmosphereClone = this.sphereAtmosphere.clone();
                     let position = this.highlightMesh.position;
                     position.y = 0.5;
                     sphereClone.position.copy(position);
+                    sphereAtmosphereClone.position.copy(position);
                     this.scene.add(sphereClone);
-                    this.objects.push(sphereClone);
+                    this.scene.add(sphereAtmosphereClone);
+                    this.objects.push(sphereClone, sphereAtmosphereClone);
                     this.highlightMesh.material.color.setHex(0xFF0000);
                 }
             }
@@ -95,7 +98,6 @@ class threeJs {
      */
     resizeScreenAction() {
         window.addEventListener('resize', () => {
-            debugger;
             this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -186,23 +188,29 @@ class threeJs {
 
     /**
      * Set skybox images
-     * @param {Array} skyBoxImages - array of images path 
+     * @param {Array} skyBoxImages - array of images path to load as background of canvas  effect as 3d
      */
-    setSkyBox(skyBoxImages) {        
-        let loader = new THREE.CubeTextureLoader();
-        this.scene.background = loader.load(skyBoxImages);
-        this.renderer.render(this.scene, this.camera);        
+    setSkyBox(skyBoxImages) {
+        if(skyBoxImages) {
+            this.scene.background = new THREE.CubeTextureLoader().load(skyBoxImages);
+            this.renderer.render(this.scene, this.camera);                    
+        }
         this.runScene();
     }
 
     /**
      * Set threejs WebGLRenderer renderer
-     * @param {String} color - HEX color value
+     * @param {String} color - HEX color value to set as background of canvas
      */
     setRenderer(color) {
-        this.renderer = new THREE.WebGLRenderer({antialias: true});
+        this.renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setClearColor(color, 1);
+        if(color) {
+            this.renderer.setClearColor(color, 1);
+        }
+        this.renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(this.renderer.domElement);
     }
 
@@ -275,11 +283,14 @@ class threeJs {
                 this.highlightMesh.material.opacity = 1 + Math.sin(time / 120);
             }            
             this.renderer.render(this.scene, this.camera);
-            this.spotLight.position.set(
-                this.camera.position.x + 10,
-                this.camera.position.y + 10,
-                this.camera.position.z + 10
-            );
+            // this.spotLight.position.set(
+            //     this.camera.position.x + 10,
+            //     this.camera.position.y + 10,
+            //     this.camera.position.z + 10
+            // );
+            this.objects.forEach((obj) => {
+                obj.rotation.y += 0.002;
+            });
             requestAnimationFrame(renderSceneAndCam);
         }
         renderSceneAndCam();
@@ -312,6 +323,7 @@ class threeJs {
 
     /**
      * Move geometry object through the screen
+     * @param {Object} objects - THREE objects
      */
     moveObject(objects) {
         $(document).keydown((event) => {
@@ -356,16 +368,52 @@ class threeJs {
         });                      
     }
 
+    /**
+     * Load materials and textures variables
+     */
     preLoadTextures() {
         this.texturesValues = this.create3dObjectsHelper.textures();
         this.metallicNestMaterial = this.create3dObjectsHelper.standardMaterialValues({normalMap: this.texturesValues.nest, roughness: 0.8, metalness: 0.3});
         this.woodMaterial = this.create3dObjectsHelper.standardMaterialValues({normalMap: this.texturesValues.wood, roughness: 0.9, metalness: 0.1});
         this.reflectMaterial = this.create3dObjectsHelper.basicMaterialValues({envMap: this.scene.background});
+        this.globeMaterial = this.reflectMaterial = this.create3dObjectsHelper.basicMaterialValues({map: this.texturesValues.globe});
+        this.shaderMaterial = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader,
+            uniforms: this.getUniformObj(this.texturesValues.globe)
+        });
+
+        this.atmosphereShaderMaterial = new THREE.ShaderMaterial({
+            vertexShader: atmosphereVertexShader,
+            fragmentShader: atmosphereFragmentShader,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide
+        });
+        this.skyBoxImages = [
+            "textures\\Day_Light_skyBox\\Box_Left_1.bmp", "textures\\Day_Light_skyBox\\Box_Right_2.bmp",
+            "textures\\Day_Light_skyBox\\Box_Top_3.bmp", "textures\\Day_Light_skyBox\\Box_Bottom_4.bmp",
+            "textures\\Day_Light_skyBox\\Box_Back_5.bmp", "textures\\Day_Light_skyBox\\Box_Front_6.bmp"
+        ]
+        // this.extenal3dObject = this.load3dExternalModel('models/rusticFarmHouseNewBrunswickCanada/scene.gltf', -30, -50, 0);
+        // this.extenal3dObject = await this.load3dExternalModel('models/oldRailroadBumper/scene.gltf', -20, 0, 10);
     }
 
+    /**
+     * Load materials and textures variables
+     */
     setDirectionalLightHelper() {
         this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.1);
         this.dLightHelper = new THREE.DirectionalLightHelper(this.directionalLight, 5);
+    }
+
+    /**
+     * Load materials and textures variables
+     * @param {Object} texture - Threejs TextureLoader object
+     */
+    getUniformObj(texture) {
+        return THREE.UniformsUtils.clone({ 
+            texture1: { type: "t", value:  texture}
+        })
     }
 }
 
